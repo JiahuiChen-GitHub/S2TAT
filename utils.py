@@ -188,3 +188,20 @@ def generate_seq(data, train_length, pred_length):
         for i in range(data.shape[0] - train_length - pred_length + 1)],
         axis=0)[:, :, :, 0: 1]
     return np.split(seq, [train_length], axis=1)
+
+
+class Logger(object):
+    def __init__(self, log_file_path, stream):
+        self.stream = stream
+        print('Logger: ', log_file_path)
+        self.log_file = log_file_path
+    
+    def write(self, message):
+        with open(self.log_file, 'a') as log:
+            self.stream.write(message)
+            log.write(message)
+            self.stream.flush()
+            log.flush()
+    
+    def flush(self):
+        pass

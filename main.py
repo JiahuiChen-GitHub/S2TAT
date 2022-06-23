@@ -1,7 +1,7 @@
 from __future__ import print_function
 
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "0, 1, 2, 3"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2,3"
 import sys
 import tensorflow as tf
 from tensorflow.keras.optimizers import Adam
@@ -10,7 +10,6 @@ from utils import *
 import argparse
 import json
 import time
-import logging
 
 
 parser = argparse.ArgumentParser()
@@ -40,42 +39,26 @@ d_his = config['d_his']
 d_future = config['d_future']
 receptive_field = config['receptive_field']
 
-
-def seed_tensorflow(seed=42):
-    os.environ['PYTHONHASHSEED'] = str(seed)
-    tf.random.set_seed(seed)
-
-
-adj = get_adjacency_matrix(adj_filename, n_nodes, id_filename=id_filename)
-adj_norm = normalize_adj(adj)
-print("The shape of localized adjacency matrix: {}".format(adj_norm.shape), flush=True)
-
-
-# Log
-logger = logging.getLogger(__name__)
-logger.setLevel(level=logging.INFO)
+# Logger
 log_path = 'log/'+config['dataset']+'_'+config['model_type']+"/"
 if not os.path.exists(log_path):
     os.makedirs(log_path)
 log_file = time.strftime('%Y%m%d_%H%M',time.localtime())+'.log'
-handler = logging.FileHandler(log_path+log_file, mode='a+')
-handler.setLevel(logging.DEBUG)
-logger.addHandler(handler)
-logger.addHandler(logging.StreamHandler(sys.stdout))
+sys.stdout = Logger(log_path+log_file, sys.stdout)
 
-# t = time.localtime()
-# log_file = time.strftime('%Y%m%d_%H%M',t)+'.txt'
-# log = open(log_path+log_file, 'w+')
+
+# Config
+print('\nCONFIG')
 for key, value in config.items():
-    logger.info('{}: {}'.format(key, value))
-# print('\n', file=log)
+    print('\t{}: {}'.format(key, value))
 
 
-# Construct Model
+# Perpare Dataloader
+print('\nLoad data...')
 loaders = []
 for idx, (x, y) in enumerate(generate_data(feature_filename, (seq_time, pre_time))):
     y = y.squeeze(axis=-1)
-    print(x.shape, y.shape)
+    print(f'Input shape:{x.shape}, Prediction shape:{y.shape}')
     loaders.append(
         tf.data.Dataset.from_tensor_slices((x, y)).batch(batch_size).prefetch(tf.data.experimental.AUTOTUNE)
     )
@@ -83,9 +66,13 @@ for idx, (x, y) in enumerate(generate_data(feature_filename, (seq_time, pre_time
         X_test = x
         Y_test = y
 
-seed_tensorflow()
 train_loader, val_loader, test_loader = loaders
 train_loader = train_loader.shuffle(200*batch_size, reshuffle_each_iteration=True)
+
+
+# Construct Model
+adj = get_adjacency_matrix(adj_filename, n_nodes, id_filename=id_filename)
+adj_norm = normalize_adj(adj)
 
 mirrored_strategy = tf.distribute.MirroredStrategy()
 with mirrored_strategy.scope():
@@ -98,7 +85,7 @@ with mirrored_strategy.scope():
 
 lr = tf.keras.callbacks.ReduceLROnPlateau(factor=0.3, patience=20, verbose=2, min_lr=9e-5)
 es = tf.keras.callbacks.EarlyStopping(patience=30)
-checkpoint_path = "./checkpoints/"+config['dataset']+config['model_type']+"/S2TAT.ckpt"
+checkpoint_path = "./checkpoints/"+config['dataset']+'_'+config['model_type']+"/S2TAT.ckpt"
 checkpoint = tf.keras.callbacks.ModelCheckpoint(
     filepath=checkpoint_path,
     save_weights_only=True,
@@ -106,7 +93,9 @@ checkpoint = tf.keras.callbacks.ModelCheckpoint(
     mode='min',
     save_best_only=True)
 
-# Model fit
+
+# Model Training and Evaluating
+print('\nTraining ...')
 model.fit(x=train_loader,
           epochs=epochs,
           validation_data=val_loader,
@@ -114,13 +103,16 @@ model.fit(x=train_loader,
           verbose=2,
           workers=5,
           use_multiprocessing=True)
+print('Training compelete.')
 
 model.summary()
 
+print('\nEvaluating ...')
 model.load_weights(checkpoint_path)
-model.evaluate(x=test_loader)
-Y_pre = model.predict(x=X_test, batch_size=batch_size)
+model.evaluate(x=test_loader, verbose=2)
+Y_pre = model.predict(x=X_test, batch_size=batch_size, verbose=2)
 mae = masked_mae_np(Y_test, Y_pre, 0)
 mape = masked_mape_np(Y_test, Y_pre, 0)
 rmse = masked_mse_np(Y_test, Y_pre, 0) ** 0.5
-logger.info(f'MAE:{mae}, MAPE:{mape}, RMSE:{rmse}')
+print('Evaluating compelete.')
+print(f'MAE:{mae}, MAPE:{mape}, RMSE:{rmse}')
