@@ -1,17 +1,16 @@
 from __future__ import print_function
 
 import os
-
+os.environ["CUDA_VISIBLE_DEVICES"] = "0, 1, 2, 3"
 import sys
 import tensorflow as tf
 from tensorflow.keras.optimizers import Adam
 from Model import S2TAT
-from utils import get_adjacency_matrix, normalize_adj
-from utils import masked_mae_np, masked_mape_np, masked_mse_np
-from utils import generate_data
+from utils import *
 import argparse
 import json
 import time
+import logging
 
 
 parser = argparse.ArgumentParser()
@@ -53,17 +52,24 @@ print("The shape of localized adjacency matrix: {}".format(adj_norm.shape), flus
 
 
 # Log
+logger = logging.getLogger(__name__)
+logger.setLevel(level=logging.INFO)
 log_path = 'log/'+config['dataset']+'_'+config['model_type']+"/"
 if not os.path.exists(log_path):
     os.makedirs(log_path)
-stdout = sys.stdout
+log_file = time.strftime('%Y%m%d_%H%M',time.localtime())+'.log'
+handler = logging.FileHandler(log_path+log_file, mode='a+')
+handler.setLevel(logging.DEBUG)
+logger.addHandler(handler)
+logger.addHandler(logging.StreamHandler(sys.stdout))
 
-t = time.localtime()
-log_file = time.strftime('%Y%m%d_%H%M',t)+'.txt'
-log = open(log_path+log_file, 'w+')
+# t = time.localtime()
+# log_file = time.strftime('%Y%m%d_%H%M',t)+'.txt'
+# log = open(log_path+log_file, 'w+')
 for key, value in config.items():
-    print('{}: {}'.format(key, value), file=log)
-print('\n', file=log)
+    logger.info('{}: {}'.format(key, value))
+# print('\n', file=log)
+
 
 # Construct Model
 loaders = []
@@ -101,7 +107,6 @@ checkpoint = tf.keras.callbacks.ModelCheckpoint(
     save_best_only=True)
 
 # Model fit
-sys.stdout = log
 model.fit(x=train_loader,
           epochs=epochs,
           validation_data=val_loader,
@@ -111,7 +116,6 @@ model.fit(x=train_loader,
           use_multiprocessing=True)
 
 model.summary()
-sys.stdout = stdout
 
 model.load_weights(checkpoint_path)
 model.evaluate(x=test_loader)
@@ -119,6 +123,4 @@ Y_pre = model.predict(x=X_test, batch_size=batch_size)
 mae = masked_mae_np(Y_test, Y_pre, 0)
 mape = masked_mape_np(Y_test, Y_pre, 0)
 rmse = masked_mse_np(Y_test, Y_pre, 0) ** 0.5
-print('\nMAE:', mae, '\nMAPE:', mape, '\nRMSE:', rmse, file=log)
-log.close()
-print('\nMAE:', mae, '\nMAPE:', mape, '\nRMSE:', rmse)
+logger.info(f'MAE:{mae}, MAPE:{mape}, RMSE:{rmse}')
