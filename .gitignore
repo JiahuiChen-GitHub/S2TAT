@@ -160,8 +160,13 @@ cython_debug/
 #.idea/
 
 *.npy
-PEM*
-PeM*
+PEMS03
+PEMS04
+PEMS07
+PEMS08
+PeMSD7L
+PeMSD7M
+ablation*
 checkpoints
 log
 results
