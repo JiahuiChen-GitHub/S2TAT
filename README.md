@@ -1,4 +1,4 @@
-# S $^2$ TAT
+# $S^2TAT$
 Synchronous Spatio-Temporal Graph Transformer: A New Framework for Traffic Data Prediction
 
 [[Paper](https://ieeexplore.ieee.org/abstract/document/9770130)]
