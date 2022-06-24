@@ -32,7 +32,7 @@ python main.py --config $config_path$
 ```
 
 ## Results
-The results of our S $^2$ TAT is tabulated as below
+The results of our $S^2TAT$ is tabulated as below
 | Dataset | MAE | MAPE(%) | MSE | #Parameters(M)  |
 |----------|:----:|:---:|:---:|:---:|
 |  PEMS03 | 15.12 | 15.38  | 25.98 | 3.2  |
