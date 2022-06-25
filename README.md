@@ -8,7 +8,7 @@ Synchronous Spatio-Temporal Graph Transformer: A New Framework for Traffic Data 
 ```
 Tensorflow > 2.0
 ```
-This repo was tested with Ubuntu 18.04.1 LTS, Python 3.8, tensorflow 2.5.0, and CUDA 11. But it should be runnable with recent tensoflow versions >=2.0
+This repo was tested with Ubuntu 18.04.1 LTS, Python 3.8, tensorflow 2.5.0, and CUDA 11. But it should be runnable with recent tensoflow versions > 2.0
 
 ## Data Preparation
 The dataset is PEMS data for traffic prediction. Download and extract them under S2TAT/data, and make them look like this:
