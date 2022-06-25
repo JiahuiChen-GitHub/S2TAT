@@ -1,12 +1,14 @@
-# S $^2$ TAT
+# $S^2TAT$
 Synchronous Spatio-Temporal Graph Transformer: A New Framework for Traffic Data Prediction
 
 [[Paper](https://ieeexplore.ieee.org/abstract/document/9770130)]
 
 ## Installation
+
 ```
 Tensorflow > 2.0
 ```
+This repo was tested with Ubuntu 18.04.1 LTS, Python 3.8, tensorflow 2.5.0, and CUDA 11. But it should be runnable with recent tensoflow versions >=2.0
 
 ## Data Preparation
 The dataset is PEMS data for traffic prediction. Download and extract them under S2TAT/data, and make them look like this:
@@ -32,7 +34,7 @@ python main.py --config $config_path$
 ```
 
 ## Results
-The results of our S $^2$ TAT is tabulated as below
+The results of our $S^2TAT$ is tabulated as below
 | Dataset | MAE | MAPE(%) | MSE | #Parameters(M)  |
 |----------|:----:|:---:|:---:|:---:|
 |  PEMS03 | 15.12 | 15.38  | 25.98 | 3.2  |
